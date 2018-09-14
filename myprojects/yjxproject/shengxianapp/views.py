@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from .models import SXUser
 from hashlib import sha1
 from django.http import JsonResponse, HttpResponseRedirect
+from . import user_decorator
 
 
 def register(request):
@@ -25,7 +26,7 @@ def register_handle(request):
 
     # 判断两次密码
     if upwd != upwd2:
-        return redirect('/register')
+        return redirect('/user/register')
     # 加密
     s1 = sha1()
     s1.update(upwd.encode('utf-8'))
@@ -37,8 +38,7 @@ def register_handle(request):
     sxuser.password = upwd3
     sxuser.uemail = uemail
     sxuser.save()
-
-    return redirect('/login')
+    return redirect('/user/login')
 
 
 def login(request):
@@ -65,14 +65,15 @@ def login_handle(request):
         user = SXUser.objects.get(username=uname)
         # 登录成功
         if user.password == upwd2:
-            red = HttpResponseRedirect('/user_center_info')
+            url = request.COOKIES.get('url', '/goods')
+            red = HttpResponseRedirect(url)
             # 记住用户名
             if jizhu != 0:
                 red.set_cookie('uname', uname)
             else:
                 red.set_cookie('uname', '', max_age=-1)
-            request.session['user_id']=user.id
-            request.session['user_name']=uname
+            request.session['user_id'] = user.id
+            request.session['user_name'] = uname
             return red
         else:  # 密码错误
             context = {'title': '用户登录',
@@ -91,23 +92,30 @@ def login_handle(request):
         return render(request, 'sx_user/login.html', context)
 
 
+@user_decorator.login
 def user_center_info(request):
     uemail = SXUser.objects.get(id=request.session['user_id']).uemail
     uname = request.session['user_name']
     context = {'title': '个人信息',
                'uemail': uemail,
-               'uname': uname}
+               'uname': uname,
+               'page_name': 1,
+               'guest_cart': 0}
     return render(request, 'sx_user/user_center_info.html', context)
 
 
+@user_decorator.login
 def user_center_order(request):
-    context = {'title': '全部订单'}
+    context = {'title': '全部订单',
+               'page_name': 1,
+               'guest_cart': 0}
     return render(request, 'sx_user/user_center_order.html', context)
 
 
+@user_decorator.login
 def user_center_site(request):
     user = SXUser.objects.get(id=request.session['user_id'])
-    if request.method=='POST':
+    if request.method == 'POST':
         post = request.POST
         user.ushouname = post.get('ushou')
         user.uaddress = post.get('uaddress')
@@ -115,5 +123,12 @@ def user_center_site(request):
         user.uphone = post.get('uphone')
         user.save()
     context = {'title': '收货地址',
-               'user': user}
+               'user': user,
+               'page_name': 1,
+               'guest_cart': 0}
     return render(request, 'sx_user/user_center_site.html', context)
+
+
+def logout(request):
+    request.session.flush()
+    return redirect('/goods')
