@@ -1,6 +1,7 @@
 # coding=utf-8
 from django.shortcuts import render, redirect
 from .models import SXUser
+from df_goods.models import GoodsInfo
 from hashlib import sha1
 from django.http import JsonResponse, HttpResponseRedirect
 from . import user_decorator
@@ -96,11 +97,20 @@ def login_handle(request):
 def user_center_info(request):
     uemail = SXUser.objects.get(id=request.session['user_id']).uemail
     uname = request.session['user_name']
+    # 最近浏览
+    goods_ids = request.COOKIES.get('goods_ids', '')
+    goods_ids1 = goods_ids.split(',')
+    goods_list = []
+    for goods_id in goods_ids1:
+        if goods_id != '':
+            goods_list.append(GoodsInfo.objects.get(id=int(goods_id)))
+
     context = {'title': '个人信息',
                'uemail': uemail,
                'uname': uname,
                'page_name': 1,
-               'guest_cart': 0}
+               'guest_cart': 0,
+               'goods_list': goods_list}
     return render(request, 'sx_user/user_center_info.html', context)
 
 

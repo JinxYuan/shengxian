@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import TypeInfo,GoodsInfo
+from .models import TypeInfo, GoodsInfo
 from django.core.paginator import *
 
 
@@ -55,17 +55,36 @@ def list(request, tid, current_page, sort):
                'guest_cart': 1,
                'new': new,
                'page': page,
-               'typeinfo_id': typeinfo.id
+               'typeinfo_id': typeinfo.id,
+               'sort': sort,
                }
     return render(request, 'df_goods/list.html', content)
 
 
 def detail(request, gid):
     goods = GoodsInfo.objects.get(pk=int(gid))
+    goods.gclick = goods.gclick + 1
+    goods.save()
     typeinfo = TypeInfo.objects.get(pk=goods.gtype_id)
     new = typeinfo.goodsinfo_set.order_by('-id')[0:2]
     content = {'page_name': 0,
                'guest_cart': 1,
                'new': new,
                'goods': goods}
-    return  render(request, 'df_goods/detail.html', content)
+    response = render(request, 'df_goods/detail.html', content)
+    # 浏览记录
+    goods_ids = request.COOKIES.get('goods_ids', '')
+    goods_id = "%d"%goods.id
+    if goods_ids != "": # 判断是否有历史纪录
+        goods_ids1 = goods_ids.split(',') # 拆分为列表
+        if goods_ids1.count(goods_id)>=1:
+            goods_ids1.remove(goods_id)
+        goods_ids1.insert(0, goods_id)
+        if len(goods_ids1) >= 6:
+            del goods_ids1[5]
+        goods_ids = ','.join(goods_ids1)
+    else:
+        goods_ids = goods_id
+    response.set_cookie('goods_ids', goods_ids)
+
+    return response

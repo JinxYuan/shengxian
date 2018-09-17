@@ -1,4 +1,17 @@
 {%extends 'df_goods/base.html'%}
+{%block head%}
+<script>
+	function add() {
+        var num = $('#num_show').val();
+        $('#num_show').val(parseInt(num)+1);
+    }
+
+    function minus() {
+        var num = $('#num_show').val();
+        $('#num_show').val(parseInt(num)-1);
+    }
+</script>
+{%endblock head%}
 {%block down%}
 	<div class="breadcrumb">
 		<a href="#">全部分类</a>
@@ -21,9 +34,9 @@
 			<div class="goods_num clearfix">
 				<div class="num_name fl">数 量：</div>
 				<div class="num_add fl">
-					<input type="text" class="num_show fl" value="1">
-					<a href="javascript:;" class="add fr">+</a>
-					<a href="javascript:;" class="minus fr">-</a>
+					<input type="text" class="num_show fl" value="1" id="num_show">
+					<a href="javascript:;" class="add fr" id="add" onclick="add()">+</a>
+					<a href="javascript:;" class="minus fr" id="minus" onclick="minus()">-</a>
 				</div>
 			</div>
 			<div class="total">总价：<em>16.80元</em></div>
